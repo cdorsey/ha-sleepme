@@ -1,5 +1,7 @@
 """Sleep.me Climate integration for Home Assistant."""
 
+from __future__ import annotations
+
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
