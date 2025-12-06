@@ -208,7 +208,11 @@ class SleepmeApiClient:
                 )
                 _verify_response_or_raise(response)
 
-                return response_model.model_validate_json(await response.read())
+                content = await response.read()
+
+                LOGGER.debug(f"{method} {url} response: {content}")
+
+                return response_model.model_validate_json(content)
 
         except TimeoutError as exception:
             msg = f"Timeout error fetching information - {exception}"
