@@ -26,23 +26,23 @@ class SleepmeDataUpdateCoordinator(DataUpdateCoordinator):
     async def async_set_device_mode(self, device_id: str, mode: str) -> None:
         """Set the device mode."""
 
-        status = await self.config_entry.runtime_data.client.async_set_device_mode(
+        control = await self.config_entry.runtime_data.client.async_set_device_mode(
             device_id, mode
         )
-        self.data[device_id]["status"] = status.model_dump()
+        self.data[device_id]["control"] = control.model_dump()
 
     async def async_set_device_temperature(
         self, device_id: str, temperature: int
     ) -> None:
         """Set the device temperature."""
 
-        status = (
+        control = (
             await self.config_entry.runtime_data.client.async_set_device_temperature(
                 device_id, temperature
             )
         )
 
-        self.data[device_id]["status"] = status.model_dump()
+        self.data[device_id]["control"] = control.model_dump()
 
     async def _async_setup(self) -> None:
         """

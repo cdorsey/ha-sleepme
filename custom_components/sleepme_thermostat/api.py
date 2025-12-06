@@ -156,7 +156,7 @@ class SleepmeApiClient:
 
     async def async_set_device_temperature(
         self, device_id: str, temperature: int
-    ) -> SleepmeDeviceStatus:
+    ) -> SleepmeDeviceControl:
         """Set device temperature from the API."""
 
         url = f"https://api.developer.sleep.me/v1/devices/{device_id}"
@@ -164,20 +164,20 @@ class SleepmeApiClient:
         return await self.api_wrapper(
             HTTPMethod.PATCH,
             url,
-            SleepmeDeviceStatus,
+            SleepmeDeviceControl,
             data={"set_temperature_f": temperature},
         )
 
     async def async_set_device_mode(
         self, device_id: str, mode: str
-    ) -> SleepmeDeviceStatus:
+    ) -> SleepmeDeviceControl:
         """Set device mode from the API."""
 
         url = f"https://api.developer.sleep.me/v1/devices/{device_id}"
         return await self.api_wrapper(
             HTTPMethod.PATCH,
             url,
-            SleepmeDeviceStatus,
+            SleepmeDeviceControl,
             data={"thermal_control_status": mode},
         )
 
