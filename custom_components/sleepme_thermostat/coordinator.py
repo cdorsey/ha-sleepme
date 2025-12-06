@@ -74,7 +74,7 @@ class SleepmeDataUpdateCoordinator(DataUpdateCoordinator):
                     results[device_id] = {**device, **(data.model_dump())}
                     LOGGER.debug(
                         f"Device {device['name']} state: "
-                        f"{json.dumps(results[device_id], indent=2)}"
+                        f"{json.dumps(results[device_id], indent=2, default=str)}"
                     )
         except SleepmeApiClientAuthenticationError as exception:
             raise ConfigEntryAuthFailed(exception) from exception
