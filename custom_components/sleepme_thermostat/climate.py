@@ -192,6 +192,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         mode = "active" if hvac_mode == HVACMode.HEAT_COOL else "standby"
         LOGGER.debug(f"Setting HVAC mode to {mode}")
 
+        await self.coordinator.async_set_device_mode(self.idx, mode)
+
         if mode == "active":
             self._state = HVACMode.HEAT_COOL
         else:
