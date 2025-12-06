@@ -54,7 +54,9 @@ class SleepmeDataUpdateCoordinator(DataUpdateCoordinator):
         This method will be called automatically during
         coordinator.async_config_entry_first_refresh.
         """
-        self._devices = await self.config_entry.runtime_data.client.async_get_devices()
+
+        devices = await self.config_entry.runtime_data.client.async_get_devices()
+        self._devices = [device.model_dump() for device in devices]
 
         LOGGER.debug(f"Devices: {[device['name'] for device in self._devices]}")
 
