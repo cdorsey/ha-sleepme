@@ -1,6 +1,7 @@
 """Sleep.me Climate integration for Home Assistant."""
 
-from typing import Any
+from functools import cached_property
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -9,13 +10,16 @@ from homeassistant.components.climate.const import (
     HVACMode,
 )
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, LOGGER, PRESET_MAX_COOL, PRESET_MAX_HEAT, PRESET_TEMPERATURES
 from .coordinator import SleepmeDataUpdateCoordinator
-from .data import SleepmeConfigEntry
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+    from .data import SleepmeConfigEntry
 
 
 async def async_setup_entry(
@@ -29,7 +33,7 @@ async def async_setup_entry(
     async_add_entities([SleepmeClimate(coordinator, idx) for idx in coordinator.data])
 
 
-class SleepmeClimate(CoordinatorEntity, ClimateEntity):
+class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEntity):
     """Sleep.me Climate Entity."""
 
     def __init__(self, coordinator: SleepmeDataUpdateCoordinator, idx: str) -> None:
@@ -62,7 +66,7 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
             f"Initializing SleepmeClimate with device info: {coordinator.data[idx]}"
         )
 
-    @property
+    @cached_property
     def supported_features(self) -> ClimateEntityFeature:
         """Return the list of supported features."""
         return (
@@ -72,32 +76,32 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
             | ClimateEntityFeature.PRESET_MODE
         )
 
-    @property
+    @cached_property
     def hvac_modes(self) -> list[HVACMode]:
         """Return the list of available HVAC modes."""
         return [HVACMode.OFF, HVACMode.HEAT_COOL]
 
-    @property
+    @cached_property
     def min_temp(self) -> int:
         """Return the minimum temperature."""
         return 55
 
-    @property
+    @cached_property
     def max_temp(self) -> int:
         """Return the maximum temperature."""
         return 115
 
-    @property
+    @cached_property
     def name(self) -> str:
         """Return the name of the climate entity."""
         return self._name
 
-    @property
+    @cached_property
     def temperature_unit(self) -> UnitOfTemperature:
         """Return the unit of measurement."""
         return UnitOfTemperature.FAHRENHEIT
 
-    @property
+    @cached_property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
         try:
@@ -112,12 +116,12 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
             )
             return None
 
-    @property
+    @cached_property
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
         return self._target_temperature
 
-    @property
+    @cached_property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return the extra state attributes."""
         return {
@@ -129,9 +133,10 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
             .get("is_connected"),
         }
 
-    @property
-    def available(self) -> bool:
+    @cached_property
+    def available(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return True if the device is connected, False otherwise."""
+
         return (
             self.coordinator.data[self.idx].get("status", {}).get("is_connected", False)
         )
@@ -142,10 +147,13 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
         if temperature is not None:
             temperature = int(temperature)
             LOGGER.debug(f"Setting target temperature to {temperature}F")
+
+            await self.coordinator.async_set_device_temperature(self.idx, temperature)
+
             self._target_temperature = temperature
             self.async_write_ha_state()  # Update the state immediately
 
-    @property
+    @cached_property
     def hvac_mode(self) -> HVACMode:
         """Return the current HVAC mode."""
         try:
@@ -163,12 +171,12 @@ class SleepmeClimate(CoordinatorEntity, ClimateEntity):
             )
             return HVACMode.OFF
 
-    @property
+    @cached_property
     def preset_modes(self) -> list[str]:
         """Return the list of available preset modes."""
         return [PRESET_NONE, PRESET_MAX_HEAT, PRESET_MAX_COOL]
 
-    @property
+    @cached_property
     def preset_mode(self) -> str | None:
         """Return the current preset mode."""
         if self.hvac_mode == HVACMode.OFF:

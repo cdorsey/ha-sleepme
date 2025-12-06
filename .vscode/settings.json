@@ -1,5 +1,4 @@
 {
-  "analysis.autoSearchPaths": false,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
   },
@@ -7,7 +6,6 @@
   "editor.tabSize": 4,
   "files.eol": "\n",
   "files.trimTrailingWhitespace": true,
-  "terminal.integrated.shell.linux": "/bin/bash",
   "[javascript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
@@ -17,5 +15,6 @@
   "files.associations": {
     "*.yaml": "home-assistant"
   },
-  "python.languageServer": "None"
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "standard"
 }
