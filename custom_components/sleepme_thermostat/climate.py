@@ -103,8 +103,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         """Return the unit of measurement."""
         return UnitOfTemperature.FAHRENHEIT
 
-    @cached_property
-    def current_temperature(self) -> float | None:
+    @property
+    def current_temperature(self) -> float | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the current temperature."""
         try:
             status = self.coordinator.data[self.idx].get("status", {})
@@ -118,13 +118,13 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
             )
             return None
 
-    @cached_property
-    def target_temperature(self) -> float | None:
+    @property
+    def target_temperature(self) -> float | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the target temperature."""
         return self._target_temperature
 
-    @cached_property
-    def extra_state_attributes(self) -> dict[str, Any]:
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the extra state attributes."""
         return {
             "is_water_low": self.coordinator.data[self.idx]
@@ -135,8 +135,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
             .get("is_connected"),
         }
 
-    @cached_property
-    def available(self) -> bool:  # pyright: ignore[reportIncompatibleMethodOverride]
+    @property
+    def available(self) -> bool:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return True if the device is connected, False otherwise."""
 
         return (
@@ -155,8 +155,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
             self._target_temperature = temperature
             self.async_write_ha_state()  # Update the state immediately
 
-    @cached_property
-    def hvac_mode(self) -> HVACMode:
+    @property
+    def hvac_mode(self) -> HVACMode:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the current HVAC mode."""
         try:
             control = self.coordinator.data[self.idx].get("control", {})
@@ -178,8 +178,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         """Return the list of available preset modes."""
         return [PRESET_NONE, PRESET_MAX_HEAT, PRESET_MAX_COOL]
 
-    @cached_property
-    def preset_mode(self) -> str | None:
+    @property
+    def preset_mode(self) -> str | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the current preset mode."""
         if self.hvac_mode == HVACMode.OFF:
             return PRESET_NONE
