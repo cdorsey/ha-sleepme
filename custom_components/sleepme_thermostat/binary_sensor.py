@@ -1,13 +1,21 @@
 """Sleep.me Binary Sensor integration for Home Assistant."""
 
+from __future__ import annotations
+
+from functools import cached_property
+from typing import TYPE_CHECKING
+
 from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import BINARY_SENSOR_TYPES, LOGGER
-from .coordinator import SleepmeDataUpdateCoordinator
-from .data import SleepmeConfigEntry
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+    from .coordinator import SleepmeDataUpdateCoordinator
+    from .data import SleepmeConfigEntry
 
 
 async def async_setup_entry(
@@ -27,7 +35,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class SleepmeBinarySensor(CoordinatorEntity, BinarySensorEntity):
+class SleepmeBinarySensor(CoordinatorEntity, BinarySensorEntity):  # pyright: ignore[reportIncompatibleVariableOverride]
     """Sleep.me Binary Sensor Entity."""
 
     def __init__(
@@ -51,23 +59,23 @@ class SleepmeBinarySensor(CoordinatorEntity, BinarySensorEntity):
             f"{coordinator.data[idx]}, and sensor type: {sensor_type}"
         )
 
-    @property
+    @cached_property
     def name(self) -> str:
         """Return the name of the binary sensor."""
         return self._name
 
-    @property
+    @cached_property
     def unique_id(self) -> str:
         """Return the unique ID of the binary sensor."""
         return self._unique_id
 
     @property
-    def is_on(self) -> bool | None:
+    def is_on(self) -> bool | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the state of the binary sensor."""
         try:
             status = self.coordinator.data[self.idx].get("status", {})
             LOGGER.debug(f"Status for device {self.idx}: {status}")
-            return status.get("is_connected", False)
+            return status.get(self._sensor_type, False)
         except KeyError:
             LOGGER.error(
                 f"Error fetching state for binary sensor {self._unique_id}: "
