@@ -150,10 +150,10 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
             temperature = int(temperature)
             LOGGER.debug(f"Setting target temperature to {temperature}F")
 
-            await self.coordinator.async_set_device_temperature(self.idx, temperature)
-
             self._target_temperature = temperature
             self.async_write_ha_state()  # Update the state immediately
+
+            await self.coordinator.async_set_device_temperature(self.idx, temperature)
 
     @property
     def hvac_mode(self) -> HVACMode:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -192,14 +192,14 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         mode = "active" if hvac_mode == HVACMode.HEAT_COOL else "standby"
         LOGGER.debug(f"Setting HVAC mode to {mode}")
 
-        await self.coordinator.async_set_device_mode(self.idx, mode)
-
         if mode == "active":
             self._state = HVACMode.HEAT_COOL
         else:
             self._state = HVACMode.OFF
 
         self.async_write_ha_state()  # Update the state immediately
+
+        await self.coordinator.async_set_device_mode(self.idx, mode)
 
     async def async_update(self) -> None:
         """Update the climate entity."""
