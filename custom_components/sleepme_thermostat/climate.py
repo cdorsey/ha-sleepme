@@ -50,9 +50,13 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         self._unique_id = f"{idx}_climate"
         self._attr_unique_id = f"{DOMAIN}_{idx}_thermostat"
 
-        self._state = data.get("control", {}).get("thermal_control_status") == "active"
-        self._target_temperature = data.get("control", {}).get("set_temperature_f")
-        self._current_temperature = data.get("status", {}).get("water_temperature_f")
+        self._state: bool = (
+            data.get("control", {}).get("thermal_control_status") == "active"
+        )
+        self._target_temperature: int = data.get("control", {}).get("set_temperature_f")
+        self._current_temperature: int = data.get("status", {}).get(
+            "water_temperature_f"
+        )
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, idx)},
@@ -158,20 +162,8 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
     @property
     def hvac_mode(self) -> HVACMode:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the current HVAC mode."""
-        try:
-            control = self.coordinator.data[self.idx].get("control", {})
-            LOGGER.debug(f"Control for device {self.idx}: {control}")
-            return (
-                HVACMode.HEAT_COOL
-                if control.get("thermal_control_status") == "active"
-                else HVACMode.OFF
-            )
-        except KeyError:
-            LOGGER.error(
-                f"Error fetching HVAC mode for device {self.idx}: "
-                f"{self.coordinator.data[self.idx]}"
-            )
-            return HVACMode.OFF
+
+        return HVACMode.HEAT_COOL if self._state else HVACMode.OFF
 
     @cached_property
     def preset_modes(self) -> list[str]:
@@ -193,9 +185,9 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         LOGGER.debug(f"Setting HVAC mode to {mode}")
 
         if mode == "active":
-            self._state = HVACMode.HEAT_COOL
+            self._state = True
         else:
-            self._state = HVACMode.OFF
+            self._state = False
 
         self.async_write_ha_state()  # Update the state immediately
 
