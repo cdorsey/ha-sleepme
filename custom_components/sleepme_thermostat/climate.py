@@ -50,14 +50,6 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         self._unique_id = f"{idx}_climate"
         self._attr_unique_id = f"{DOMAIN}_{idx}_thermostat"
 
-        self._state: bool = (
-            data.get("control", {}).get("thermal_control_status") == "active"
-        )
-        self._target_temperature: int = data.get("control", {}).get("set_temperature_f")
-        self._current_temperature: int = data.get("status", {}).get(
-            "water_temperature_f"
-        )
-
         self._attr_device_info = {
             "identifiers": {(DOMAIN, idx)},
             "name": self._name,
@@ -113,7 +105,6 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         try:
             status = self.coordinator.data[self.idx].get("status", {})
             LOGGER.debug(f"Status for device {self.idx}: {status}")
-            self._current_temperature = status.get("water_temperature_f")
             return status.get("water_temperature_f")
         except KeyError:
             LOGGER.error(
@@ -125,7 +116,15 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
     @property
     def target_temperature(self) -> float | None:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the target temperature."""
-        return self._target_temperature
+        try:
+            control = self.coordinator.data[self.idx].get("control", {})
+            return control.get("set_temperature_f")
+        except KeyError:
+            LOGGER.error(
+                f"Error fetching target temperature for device {self.idx}: "
+                f"{self.coordinator.data.get(self.idx)}"
+            )
+            return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -154,16 +153,37 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
             temperature = int(temperature)
             LOGGER.debug(f"Setting target temperature to {temperature}F")
 
-            self._target_temperature = temperature
-            self.async_write_ha_state()  # Update the state immediately
+            # Optimistically update the coordinator data before API call
+            if self.idx in self.coordinator.data:
+                control = self.coordinator.data[self.idx].get("control", {})
+                control["set_temperature_f"] = temperature
+                self.coordinator.data[self.idx]["control"] = control
+                self.async_write_ha_state()
 
+            # Make the API call (will update coordinator data again when complete)
             await self.coordinator.async_set_device_temperature(self.idx, temperature)
 
     @property
     def hvac_mode(self) -> HVACMode:  # pyright: ignore[reportIncompatibleVariableOverride]
         """Return the current HVAC mode."""
-
-        return HVACMode.HEAT_COOL if self._state else HVACMode.OFF
+        try:
+            thermal_control_status = (
+                self.coordinator.data[self.idx]
+                .get("control", {})
+                .get("thermal_control_status")
+            )
+        except KeyError:
+            LOGGER.error(
+                f"Error fetching HVAC mode for device {self.idx}: "
+                f"{self.coordinator.data.get(self.idx)}"
+            )
+            return HVACMode.OFF
+        else:
+            return (
+                HVACMode.HEAT_COOL
+                if thermal_control_status == "active"
+                else HVACMode.OFF
+            )
 
     @cached_property
     def preset_modes(self) -> list[str]:
@@ -184,28 +204,19 @@ class SleepmeClimate(CoordinatorEntity[SleepmeDataUpdateCoordinator], ClimateEnt
         mode = "active" if hvac_mode == HVACMode.HEAT_COOL else "standby"
         LOGGER.debug(f"Setting HVAC mode to {mode}")
 
-        if mode == "active":
-            self._state = True
-        else:
-            self._state = False
+        # Optimistically update the coordinator data before API call
+        if self.idx in self.coordinator.data:
+            control = self.coordinator.data[self.idx].get("control", {})
+            control["thermal_control_status"] = mode
+            self.coordinator.data[self.idx]["control"] = control
+            self.async_write_ha_state()
 
-        self.async_write_ha_state()  # Update the state immediately
-
+        # Make the API call (will update coordinator data again when complete)
         await self.coordinator.async_set_device_mode(self.idx, mode)
 
     async def async_update(self) -> None:
         """Update the climate entity."""
         await self.coordinator.async_request_refresh()
-        device_state = self.coordinator.data[self.idx]
-        self._state = (
-            device_state.get("control", {}).get("thermal_control_status") == "active"
-        )
-        self._target_temperature = device_state.get("control", {}).get(
-            "set_temperature_f"
-        )
-        self._current_temperature = device_state.get("status", {}).get(
-            "water_temperature_f"
-        )
 
     def _sanitize_temperature(self, temp: float) -> float | None:
         """Sanitize temperature values returned by the API."""
