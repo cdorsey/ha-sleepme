@@ -146,7 +146,9 @@ class SleepmeApiClient:
         url = "https://api.developer.sleep.me/v1/devices"
         devices = await self.api_wrapper(HTTPMethod.GET, url, SleepmeDevices)
 
-        return [device for device in devices.devices if device.is_chilipad_pro]
+        # TODO: Filter is broken
+        # return [device for device in devices.devices if device.is_chilipad_pro]
+        return devices.devices
 
     async def async_get_device_state(self, device_id: str) -> SleepmeDeviceState:
         """Get device state from the API."""
